@@ -58,6 +58,7 @@ public class EventServiceImpl implements EventService {
         }
         Pageable pageable = PageRequest.of(from / size, size);
         List<Event> events = eventRepository.findPublishedEvents(categories, paid, rangeStart, rangeEnd, pageable);
+        saveHit(request);
 
         List<Long> eventIds = events.stream().map(Event::getId).collect(Collectors.toList());
         Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(eventIds);

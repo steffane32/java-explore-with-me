@@ -1,5 +1,6 @@
 package ru.practicum.ewm.event.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,15 +28,14 @@ public class AdminEventController {
                                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                         @RequestParam(defaultValue = "0") int from,
                                         @RequestParam(defaultValue = "10") int size) {
-        log.info("GET /admin/events - users={}, states={}, categories={}, rangeStart={}, rangeEnd={}, from={}, size={}",
-                users, states, categories, rangeStart, rangeEnd, from, size);
+        log.info("GET /admin/events");
         return eventService.getEventsByAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
     @PatchMapping("/{eventId}")
     public EventFullDto updateEvent(@PathVariable Long eventId,
-                                    @RequestBody UpdateEventAdminRequest updateRequest) {
-        log.info("PATCH /admin/events/{} - обновление: {}", eventId, updateRequest);
+                                    @Valid @RequestBody UpdateEventAdminRequest updateRequest) {
+        log.info("PATCH /admin/events/{}", eventId);
         return eventService.updateEventByAdmin(eventId, updateRequest);
     }
 }

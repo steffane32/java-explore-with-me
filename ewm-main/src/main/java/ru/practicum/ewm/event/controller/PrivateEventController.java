@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.EventShortDto;
@@ -29,7 +30,7 @@ public class PrivateEventController {
     public List<EventShortDto> getUserEvents(@PathVariable Long userId,
                                              @RequestParam(defaultValue = "0") int from,
                                              @RequestParam(defaultValue = "10") int size) {
-        log.info("GET /users/{}/events - from={}, size={}", userId, from, size);
+        log.info("GET /users/{}/events", userId);
         return eventService.getUserEvents(userId, from, size);
     }
 
@@ -37,7 +38,7 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto addEvent(@PathVariable Long userId,
                                  @Valid @RequestBody NewEventDto newEventDto) {
-        log.info("POST /users/{}/events - создание события: {}", userId, newEventDto);
+        log.info("POST /users/{}/events", userId);
         return eventService.addEvent(userId, newEventDto);
     }
 
@@ -52,7 +53,7 @@ public class PrivateEventController {
     public EventFullDto updateUserEvent(@PathVariable Long userId,
                                         @PathVariable Long eventId,
                                         @Valid @RequestBody UpdateEventUserRequest updateRequest) {
-        log.info("PATCH /users/{}/events/{} - обновление: {}", userId, eventId, updateRequest);
+        log.info("PATCH /users/{}/events/{}", userId, eventId);
         return eventService.updateUserEvent(userId, eventId, updateRequest);
     }
 
@@ -60,7 +61,12 @@ public class PrivateEventController {
     public EventRequestStatusUpdateResult updateRequestStatus(@PathVariable Long userId,
                                                               @PathVariable Long eventId,
                                                               @RequestBody EventRequestStatusUpdateRequest updateRequest) {
-        log.info("PATCH /users/{}/events/{}/requests - updateRequest={}", userId, eventId, updateRequest);
+        log.info("PATCH /users/{}/events/{}/requests", userId, eventId);
         return requestService.updateRequestStatus(userId, eventId, updateRequest);
+    }
+
+    @GetMapping("/{eventId}/requests")
+    public ResponseEntity<?> getRequestsStub() {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
     }
 }

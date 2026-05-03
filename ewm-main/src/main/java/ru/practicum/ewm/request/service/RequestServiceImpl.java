@@ -86,6 +86,10 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest request = requestRepository.findByIdAndRequesterId(requestId, userId)
                 .orElseThrow(() -> new NotFoundException("Request with id=" + requestId + " not found for user " + userId));
 
+        if (request.getStatus() == ParticipationRequest.RequestStatus.CONFIRMED) {
+            throw new ConflictException("Cannot cancel confirmed request");
+        }
+
         request.setStatus(ParticipationRequest.RequestStatus.CANCELED);
         ParticipationRequest canceled = requestRepository.save(request);
         log.info("Отменён запрос: id={}, user={}", canceled.getId(), userId);
