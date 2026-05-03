@@ -104,9 +104,14 @@ public class EventServiceImpl implements EventService {
         Category category = categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new NotFoundException("Category with id=" + newEventDto.getCategory() + " was not found"));
         Location location = locationRepository.save(LocationMapper.toEntity(newEventDto.getLocation()));
+
+        if (newEventDto.getParticipantLimit() != null && newEventDto.getParticipantLimit() < 0) {
+            throw new ValidationException("Participant limit must be >= 0");
+        }
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ValidationException("Event date must be at least 2 hours from now");
         }
+
         Event event = new Event();
         event.setAnnotation(newEventDto.getAnnotation());
         event.setCategory(category);
@@ -152,6 +157,10 @@ public class EventServiceImpl implements EventService {
         if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
             throw new ValidationException("Participant limit must be >= 0");
         }
+        if (updateRequest.getEventDate() != null &&
+                updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+            throw new ValidationException("Event date must be at least 2 hours from now");
+        }
         if (updateRequest.getAnnotation() != null) {
             event.setAnnotation(updateRequest.getAnnotation());
         }
@@ -164,9 +173,6 @@ public class EventServiceImpl implements EventService {
             event.setDescription(updateRequest.getDescription());
         }
         if (updateRequest.getEventDate() != null) {
-            if (updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-                throw new ValidationException("Event date must be at least 2 hours from now");
-            }
             event.setEventDate(updateRequest.getEventDate());
         }
         if (updateRequest.getLocation() != null) {
@@ -200,6 +206,13 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateRequest) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+        if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
+            throw new ValidationException("Participant limit must be >= 0");
+        }
+        if (updateRequest.getEventDate() != null &&
+                updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+            throw new ValidationException("Event date must be at least 2 hours from now");
+        }
         if (updateRequest.getAnnotation() != null) {
             event.setAnnotation(updateRequest.getAnnotation());
         }
@@ -220,9 +233,6 @@ public class EventServiceImpl implements EventService {
         }
         if (updateRequest.getPaid() != null) {
             event.setPaid(updateRequest.getPaid());
-        }
-        if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
-            throw new ValidationException("Participant limit must be >= 0");
         }
         if (updateRequest.getParticipantLimit() != null) {
             event.setParticipantLimit(updateRequest.getParticipantLimit());
