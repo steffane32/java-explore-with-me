@@ -134,6 +134,9 @@ public class EventServiceImpl implements EventService {
         if (event.getState() == EventState.PUBLISHED) {
             throw new ConflictException("Only pending or canceled events can be changed");
         }
+        if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
+            throw new ValidationException("Participant limit must be >= 0");
+        }
         if (updateRequest.getAnnotation() != null) {
             event.setAnnotation(updateRequest.getAnnotation());
         }
@@ -202,6 +205,9 @@ public class EventServiceImpl implements EventService {
         if (updateRequest.getPaid() != null) {
             event.setPaid(updateRequest.getPaid());
         }
+        if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
+            throw new ValidationException("Participant limit must be >= 0");
+        }
         if (updateRequest.getParticipantLimit() != null) {
             event.setParticipantLimit(updateRequest.getParticipantLimit());
         }
@@ -226,6 +232,16 @@ public class EventServiceImpl implements EventService {
         Event updated = eventRepository.save(event);
         log.info("Event updated by admin: id={}, state={}", updated.getId(), updated.getState());
         return EventMapper.toFullDto(updated);
+    }
+
+    @Override
+    public List<EventFullDto> getEventsByAdmin(List<Long> users, List<String> states, List<Long> categories,
+                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+        Pageable pageable = PageRequest.of(from / size, size);
+        List<Event> events = eventRepository.findAllByAdminFilters(users, states, categories, rangeStart, rangeEnd, pageable);
+        return events.stream()
+                .map(EventMapper::toFullDto)
+                .collect(Collectors.toList());
     }
 
     private void saveHit(HttpServletRequest request) {

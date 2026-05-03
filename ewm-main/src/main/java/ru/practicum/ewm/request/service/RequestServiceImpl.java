@@ -8,6 +8,8 @@ import ru.practicum.ewm.event.model.EventState;
 import ru.practicum.ewm.event.repository.EventRepository;
 import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.ParticipationRequest;
@@ -16,6 +18,7 @@ import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,5 +90,38 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest canceled = requestRepository.save(request);
         log.info("Отменён запрос: id={}, user={}", canceled.getId(), userId);
         return RequestMapper.toDto(canceled);
+    }
+
+    @Override
+    public EventRequestStatusUpdateResult updateRequestStatus(Long userId, Long eventId, EventRequestStatusUpdateRequest updateRequest) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " not found"));
+
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new ConflictException("Only event initiator can change request status");
+        }
+
+        List<ParticipationRequest> requests = requestRepository.findAllById(updateRequest.getRequestIds());
+        List<ParticipationRequestDto> confirmed = new ArrayList<>();
+        List<ParticipationRequestDto> rejected = new ArrayList<>();
+
+        long currentConfirmed = requestRepository.countByEventIdAndStatus(eventId, ParticipationRequest.RequestStatus.CONFIRMED);
+
+        for (ParticipationRequest request : requests) {
+            if (updateRequest.getStatus().equals("CONFIRMED")) {
+                if (event.getParticipantLimit() > 0 && currentConfirmed >= event.getParticipantLimit()) {
+                    throw new ConflictException("Participant limit reached");
+                }
+                request.setStatus(ParticipationRequest.RequestStatus.CONFIRMED);
+                confirmed.add(RequestMapper.toDto(request));
+                currentConfirmed++;
+            } else {
+                request.setStatus(ParticipationRequest.RequestStatus.REJECTED);
+                rejected.add(RequestMapper.toDto(request));
+            }
+            requestRepository.save(request);
+        }
+
+        return new EventRequestStatusUpdateResult(confirmed, rejected);
     }
 }

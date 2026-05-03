@@ -10,6 +10,9 @@ import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.service.EventService;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.request.service.RequestService;
 
 import java.util.List;
 
@@ -20,6 +23,7 @@ import java.util.List;
 public class PrivateEventController {
 
     private final EventService eventService;
+    private final RequestService requestService;
 
     @GetMapping
     public List<EventShortDto> getUserEvents(@PathVariable Long userId,
@@ -50,5 +54,13 @@ public class PrivateEventController {
                                         @Valid @RequestBody UpdateEventUserRequest updateRequest) {
         log.info("PATCH /users/{}/events/{} - обновление: {}", userId, eventId, updateRequest);
         return eventService.updateUserEvent(userId, eventId, updateRequest);
+    }
+
+    @PatchMapping("/{eventId}/requests")
+    public EventRequestStatusUpdateResult updateRequestStatus(@PathVariable Long userId,
+                                                              @PathVariable Long eventId,
+                                                              @RequestBody EventRequestStatusUpdateRequest updateRequest) {
+        log.info("PATCH /users/{}/events/{}/requests - updateRequest={}", userId, eventId, updateRequest);
+        return requestService.updateRequestStatus(userId, eventId, updateRequest);
     }
 }
