@@ -8,6 +8,7 @@ import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.repository.CategoryRepository;
+import ru.practicum.ewm.event.repository.EventRepository;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.exception.ConflictException;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
 
     @Override
     public List<CategoryDto> getCategories(int from, int size) {
@@ -51,7 +53,9 @@ public class CategoryServiceImpl implements CategoryService {
         if (!categoryRepository.existsById(id)) {
             throw new NotFoundException("Category with id=" + id + " was not found");
         }
-        // TODO: проверить, что нет событий, связанных с категорией (позже)
+        if (eventRepository.existsByCategoryId(id)) {
+            throw new ConflictException("Category has events");
+        }
         categoryRepository.deleteById(id);
         log.info("Удалена категория с id={}", id);
     }

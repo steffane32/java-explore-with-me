@@ -22,6 +22,7 @@ import ru.practicum.ewm.exception.ValidationException;
 import ru.practicum.ewm.location.mapper.LocationMapper;
 import ru.practicum.ewm.location.model.Location;
 import ru.practicum.ewm.location.repository.LocationRepository;
+import ru.practicum.ewm.request.repository.RequestRepository;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.repository.UserRepository;
 import ru.practicum.stats.client.StatsClient;
@@ -29,6 +30,7 @@ import ru.practicum.stats.dto.EndpointHitDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,6 +42,7 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
+    private final RequestRepository requestRepository;
     private final StatsClient statsClient;
 
     @Override
@@ -54,10 +57,13 @@ public class EventServiceImpl implements EventService {
             rangeEnd = LocalDateTime.now().plusYears(100);
         }
         Pageable pageable = PageRequest.of(from / size, size);
-        List<Event> events = eventRepository.findPublishedEvents(text, categories, paid, rangeStart, rangeEnd, pageable);
-        saveHit(request);
+        List<Event> events = eventRepository.findPublishedEvents(categories, paid, rangeStart, rangeEnd, pageable);
+
+        List<Long> eventIds = events.stream().map(Event::getId).collect(Collectors.toList());
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(eventIds);
+
         return events.stream()
-                .map(EventMapper::toShortDto)
+                .map(event -> EventMapper.toShortDto(event, confirmedRequestsMap.getOrDefault(event.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -69,7 +75,9 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Event with id=" + id + " not published");
         }
         saveHit(request);
-        return EventMapper.toFullDto(event);
+
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(id, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        return EventMapper.toFullDto(event, confirmedRequests);
     }
 
     @Override
@@ -78,8 +86,13 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
         Pageable pageable = PageRequest.of(from / size, size);
-        return eventRepository.findByInitiatorId(userId, pageable).stream()
-                .map(EventMapper::toShortDto)
+        List<Event> events = eventRepository.findByInitiatorId(userId, pageable).getContent();
+
+        List<Long> eventIds = events.stream().map(Event::getId).collect(Collectors.toList());
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(eventIds);
+
+        return events.stream()
+                .map(event -> EventMapper.toShortDto(event, confirmedRequestsMap.getOrDefault(event.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -108,7 +121,7 @@ public class EventServiceImpl implements EventService {
         event.setState(EventState.PENDING);
         Event saved = eventRepository.save(event);
         log.info("Event created: id={}, userId={}", saved.getId(), userId);
-        return EventMapper.toFullDto(saved);
+        return EventMapper.toFullDto(saved, 0L);
     }
 
     @Override
@@ -121,7 +134,8 @@ public class EventServiceImpl implements EventService {
         if (!event.getInitiator().getId().equals(userId)) {
             throw new NotFoundException("Event with id=" + eventId + " not found for user " + userId);
         }
-        return EventMapper.toFullDto(event);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        return EventMapper.toFullDto(event, confirmedRequests);
     }
 
     @Override
@@ -177,7 +191,8 @@ public class EventServiceImpl implements EventService {
         }
         Event updated = eventRepository.save(event);
         log.info("Event updated: id={}, userId={}", updated.getId(), userId);
-        return EventMapper.toFullDto(updated);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        return EventMapper.toFullDto(updated, confirmedRequests);
     }
 
     @Override
@@ -231,7 +246,8 @@ public class EventServiceImpl implements EventService {
         }
         Event updated = eventRepository.save(event);
         log.info("Event updated by admin: id={}, state={}", updated.getId(), updated.getState());
-        return EventMapper.toFullDto(updated);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        return EventMapper.toFullDto(updated, confirmedRequests);
     }
 
     @Override
@@ -239,8 +255,12 @@ public class EventServiceImpl implements EventService {
                                                LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
         Pageable pageable = PageRequest.of(from / size, size);
         List<Event> events = eventRepository.findAllByAdminFilters(users, states, categories, rangeStart, rangeEnd, pageable);
+
+        List<Long> eventIds = events.stream().map(Event::getId).collect(Collectors.toList());
+        Map<Long, Long> confirmedRequestsMap = requestRepository.countConfirmedRequestsByEventIds(eventIds);
+
         return events.stream()
-                .map(EventMapper::toFullDto)
+                .map(event -> EventMapper.toFullDto(event, confirmedRequestsMap.getOrDefault(event.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 

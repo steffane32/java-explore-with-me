@@ -15,14 +15,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> findByInitiatorId(Long userId, Pageable pageable);
 
     @Query("SELECT e FROM Event e " +
-            "WHERE (:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%')) " +
-            "OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%'))) " +
-            "AND (:categories IS NULL OR e.category.id IN :categories) " +
+            "WHERE (:categories IS NULL OR e.category.id IN :categories) " +
             "AND (:paid IS NULL OR e.paid = :paid) " +
             "AND e.eventDate BETWEEN :rangeStart AND :rangeEnd " +
             "AND e.state = 'PUBLISHED'")
-    List<Event> findPublishedEvents(@Param("text") String text,
-                                    @Param("categories") List<Long> categories,
+    List<Event> findPublishedEvents(@Param("categories") List<Long> categories,
                                     @Param("paid") Boolean paid,
                                     @Param("rangeStart") LocalDateTime rangeStart,
                                     @Param("rangeEnd") LocalDateTime rangeEnd,
@@ -40,4 +37,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                       @Param("rangeStart") LocalDateTime rangeStart,
                                       @Param("rangeEnd") LocalDateTime rangeEnd,
                                       Pageable pageable);
+
+    boolean existsByCategoryId(Long categoryId);
 }
