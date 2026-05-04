@@ -18,7 +18,7 @@ public class AdminCompilationController {
 
     private final CompilationService compilationService;
 
-    @PostMapping
+    @PostMapping({"/", ""})
     @ResponseStatus(HttpStatus.CREATED)
     public CompilationDto addCompilation(@Valid @RequestBody NewCompilationDto newCompilationDto) {
         log.info("POST /admin/compilations - добавить подборку: {}", newCompilationDto);

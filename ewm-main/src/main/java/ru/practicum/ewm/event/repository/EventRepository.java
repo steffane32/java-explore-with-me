@@ -25,12 +25,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                     @Param("rangeEnd") LocalDateTime rangeEnd,
                                     Pageable pageable);
 
-    @Query("SELECT e FROM Event e WHERE " +
-            "(:users IS NULL OR e.initiator.id IN :users) " +
-            "AND (:states IS NULL OR e.state IN :states) " +
-            "AND (:categories IS NULL OR e.category.id IN :categories) " +
-            "AND (:rangeStart IS NULL OR e.eventDate >= :rangeStart) " +
-            "AND (:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)")
+    @Query(value = "SELECT * FROM events e WHERE " +
+            "(:users IS NULL OR e.initiator_id IN (:users)) " +
+            "AND (:states IS NULL OR e.state IN (:states)) " +
+            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
+            "AND (CAST(:rangeStart AS TIMESTAMP) IS NULL OR e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
+            "AND (CAST(:rangeEnd AS TIMESTAMP) IS NULL OR e.event_date <= CAST(:rangeEnd AS TIMESTAMP))",
+            nativeQuery = true)
     List<Event> findAllByAdminFilters(@Param("users") List<Long> users,
                                       @Param("states") List<String> states,
                                       @Param("categories") List<Long> categories,
