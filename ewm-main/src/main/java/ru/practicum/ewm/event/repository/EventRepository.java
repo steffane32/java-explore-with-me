@@ -15,7 +15,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     Page<Event> findByInitiatorId(Long userId, Pageable pageable);
 
-    // Публичный поиск (без текста, чтобы не ломать БД)
     @Query("SELECT e FROM Event e " +
             "WHERE (:categories IS NULL OR e.category.id IN :categories) " +
             "AND (:paid IS NULL OR e.paid = :paid) " +
@@ -27,14 +26,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                     @Param("rangeEnd") LocalDateTime rangeEnd,
                                     Pageable pageable);
 
-    // Админский поиск (исправленный нативный запрос)
-    @Query(value = "SELECT * FROM events e WHERE " +
-            "(:users IS NULL OR e.initiator_id IN (:users)) " +
-            "AND (:states IS NULL OR e.state IN (:states)) " +
-            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
-            "AND (CAST(:rangeStart AS TIMESTAMP) IS NULL OR e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
-            "AND (CAST(:rangeEnd AS TIMESTAMP) IS NULL OR e.event_date <= CAST(:rangeEnd AS TIMESTAMP))",
-            nativeQuery = true)
+    @Query("SELECT e FROM Event e " +
+            "WHERE (:users IS NULL OR e.initiator.id IN :users) " +
+            "AND (:states IS NULL OR e.state IN :states) " +
+            "AND (:categories IS NULL OR e.category.id IN :categories) " +
+            "AND (CAST(:rangeStart AS timestamp) IS NULL OR e.eventDate >= :rangeStart) " +
+            "AND (CAST(:rangeEnd AS timestamp) IS NULL OR e.eventDate <= :rangeEnd)")
     List<Event> findAllByAdminFilters(@Param("users") List<Long> users,
                                       @Param("states") List<String> states,
                                       @Param("categories") List<Long> categories,

@@ -95,8 +95,9 @@ public class RequestServiceImpl implements RequestService {
 
         log.info("Attempting to cancel request: id={}, current status={}", requestId, request.getStatus());
 
-        if (request.getStatus() == ParticipationRequest.RequestStatus.CONFIRMED) {
-            throw new ConflictException("Cannot cancel confirmed request");
+        // Проверка: отменить можно только PENDING-заявку
+        if (request.getStatus() != ParticipationRequest.RequestStatus.PENDING) {
+            throw new ConflictException("Can only cancel requests with PENDING status");
         }
 
         request.setStatus(ParticipationRequest.RequestStatus.CANCELED);
@@ -121,6 +122,11 @@ public class RequestServiceImpl implements RequestService {
         long currentConfirmed = requestRepository.countByEventIdAndStatus(eventId, ParticipationRequest.RequestStatus.CONFIRMED);
 
         for (ParticipationRequest request : requests) {
+            // Проверка: изменить статус можно только у PENDING-заявок
+            if (request.getStatus() != ParticipationRequest.RequestStatus.PENDING) {
+                throw new ConflictException("Request must have status PENDING");
+            }
+
             if (updateRequest.getStatus().equals("CONFIRMED")) {
                 if (event.getParticipantLimit() > 0 && currentConfirmed >= event.getParticipantLimit()) {
                     throw new ConflictException("Participant limit reached");
