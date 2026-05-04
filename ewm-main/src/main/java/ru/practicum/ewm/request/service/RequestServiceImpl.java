@@ -32,6 +32,13 @@ public class RequestServiceImpl implements RequestService {
     private final EventRepository eventRepository;
 
     @Override
+    public List<ParticipationRequestDto> getEventRequests(Long eventId) {
+        return requestRepository.findAllByEventId(eventId).stream()
+                .map(RequestMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
@@ -86,8 +93,6 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest request = requestRepository.findByIdAndRequesterId(requestId, userId)
                 .orElseThrow(() -> new NotFoundException("Request with id=" + requestId + " not found for user " + userId));
 
-        log.info("Cancel request: current status={}", request.getStatus());
-
         if (request.getStatus() == ParticipationRequest.RequestStatus.CONFIRMED) {
             throw new ConflictException("Cannot cancel confirmed request");
         }
@@ -129,12 +134,5 @@ public class RequestServiceImpl implements RequestService {
         }
 
         return new EventRequestStatusUpdateResult(confirmed, rejected);
-    }
-
-    @Override
-    public List<ParticipationRequestDto> getEventRequests(Long eventId) {
-        return requestRepository.findAllByEventId(eventId).stream()
-                .map(RequestMapper::toDto)
-                .collect(Collectors.toList());
     }
 }
