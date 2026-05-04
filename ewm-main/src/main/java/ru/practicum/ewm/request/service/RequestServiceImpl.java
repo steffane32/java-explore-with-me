@@ -130,6 +130,7 @@ public class RequestServiceImpl implements RequestService {
 
         return new EventRequestStatusUpdateResult(confirmed, rejected);
     }
+
     @Override
     public List<ParticipationRequestDto> getEventRequests(Long eventId) {
         return requestRepository.findAllByEventId(eventId).stream()
