@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.EventShortDto;
@@ -13,9 +12,9 @@ import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.service.RequestService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -67,7 +66,9 @@ public class PrivateEventController {
     }
 
     @GetMapping("/{eventId}/requests")
-    public ResponseEntity<?> getRequestsStub() {
-        return ResponseEntity.ok(new ArrayList<>());
+    public List<ParticipationRequestDto> getEventRequests(@PathVariable Long userId,
+                                                          @PathVariable Long eventId) {
+        log.info("GET /users/{}/events/{}/requests", userId, eventId);
+        return requestService.getEventRequests(eventId);
     }
 }

@@ -15,7 +15,9 @@ import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.model.EventState;
+import ru.practicum.ewm.event.model.EventView;
 import ru.practicum.ewm.event.repository.EventRepository;
+import ru.practicum.ewm.event.repository.EventViewRepository;
 import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.exception.ValidationException;
@@ -43,6 +45,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
     private final RequestRepository requestRepository;
+    private final EventViewRepository eventViewRepository;
     private final StatsClient statsClient;
 
     @Override
@@ -76,9 +79,23 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Event with id=" + id + " not published");
         }
 
-        Long currentViews = event.getViews() == null ? 0L : event.getViews();
-        event.setViews(currentViews + 1);
-        eventRepository.save(event);
+        // Уникальные просмотры по IP
+        String clientIp = request.getRemoteAddr();
+        LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);
+
+        boolean alreadyViewed = eventViewRepository.existsByEventIdAndIpAndViewedAtAfter(id, clientIp, oneDayAgo);
+
+        if (!alreadyViewed) {
+            Long currentViews = event.getViews() == null ? 0L : event.getViews();
+            event.setViews(currentViews + 1);
+            eventRepository.save(event);
+
+            EventView eventView = new EventView();
+            eventView.setEventId(id);
+            eventView.setIp(clientIp);
+            eventView.setViewedAt(LocalDateTime.now());
+            eventViewRepository.save(eventView);
+        }
 
         saveHit(request);
 
@@ -147,7 +164,8 @@ public class EventServiceImpl implements EventService {
         if (!event.getInitiator().getId().equals(userId)) {
             throw new NotFoundException("Event with id=" + eventId + " not found for user " + userId);
         }
-        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId,
+                ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
         return EventMapper.toFullDto(event, confirmedRequests);
     }
 
@@ -205,7 +223,8 @@ public class EventServiceImpl implements EventService {
         }
         Event updated = eventRepository.save(event);
         log.info("Event updated: id={}, userId={}", updated.getId(), userId);
-        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId,
+                ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
         return EventMapper.toFullDto(updated, confirmedRequests);
     }
 
@@ -264,7 +283,8 @@ public class EventServiceImpl implements EventService {
         }
         Event updated = eventRepository.save(event);
         log.info("Event updated by admin: id={}, state={}", updated.getId(), updated.getState());
-        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId,
+                ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
         return EventMapper.toFullDto(updated, confirmedRequests);
     }
 

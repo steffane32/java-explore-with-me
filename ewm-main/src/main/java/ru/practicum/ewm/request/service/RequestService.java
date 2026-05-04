@@ -14,4 +14,6 @@ public interface RequestService {
     ParticipationRequestDto cancelRequest(Long userId, Long requestId);
 
     EventRequestStatusUpdateResult updateRequestStatus(Long userId, Long eventId, EventRequestStatusUpdateRequest updateRequest);
+
+    List<ParticipationRequestDto> getEventRequests(Long eventId);
 }
