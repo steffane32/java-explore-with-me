@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ru.practicum.ewm.event.model.Event;
+import ru.practicum.ewm.request.model.ParticipationRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +15,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     Page<Event> findByInitiatorId(Long userId, Pageable pageable);
 
+    // Публичный поиск (без текста, чтобы не ломать БД)
     @Query("SELECT e FROM Event e " +
             "WHERE (:categories IS NULL OR e.category.id IN :categories) " +
             "AND (:paid IS NULL OR e.paid = :paid) " +
@@ -25,6 +27,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                     @Param("rangeEnd") LocalDateTime rangeEnd,
                                     Pageable pageable);
 
+    // Админский поиск (исправленный нативный запрос)
     @Query(value = "SELECT * FROM events e WHERE " +
             "(:users IS NULL OR e.initiator_id IN (:users)) " +
             "AND (:states IS NULL OR e.state IN (:states)) " +
@@ -38,6 +41,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                       @Param("rangeStart") LocalDateTime rangeStart,
                                       @Param("rangeEnd") LocalDateTime rangeEnd,
                                       Pageable pageable);
+
+    @Query("SELECT e.id, COUNT(r) FROM Event e LEFT JOIN ParticipationRequest r ON r.event.id = e.id AND r.status = :status GROUP BY e.id")
+    List<Object[]> countConfirmedRequestsForEvents(@Param("status") ParticipationRequest.RequestStatus status);
 
     boolean existsByCategoryId(Long categoryId);
 }
