@@ -46,7 +46,7 @@ public class EventMapper {
                 event.getRequestModeration(),
                 event.getState(),
                 event.getTitle(),
-                0L
+                event.getViews()
         );
     }
 

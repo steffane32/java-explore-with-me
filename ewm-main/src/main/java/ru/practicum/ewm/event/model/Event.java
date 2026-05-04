@@ -63,4 +63,7 @@ public class Event {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EventState state;
+
+    @Column(name = "views", nullable = false)
+    private Long views = 0L;
 }

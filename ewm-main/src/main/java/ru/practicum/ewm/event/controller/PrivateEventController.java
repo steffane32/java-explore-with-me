@@ -15,6 +15,7 @@ import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.request.service.RequestService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -67,6 +68,6 @@ public class PrivateEventController {
 
     @GetMapping("/{eventId}/requests")
     public ResponseEntity<?> getRequestsStub() {
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
+        return ResponseEntity.ok(new ArrayList<>());
     }
 }

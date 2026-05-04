@@ -75,9 +75,15 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new NotFoundException("Event with id=" + id + " not published");
         }
+
+        Long currentViews = event.getViews() == null ? 0L : event.getViews();
+        event.setViews(currentViews + 1);
+        eventRepository.save(event);
+
         saveHit(request);
 
-        Long confirmedRequests = requestRepository.countByEventIdAndStatus(id, ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
+        Long confirmedRequests = requestRepository.countByEventIdAndStatus(id,
+                ru.practicum.ewm.request.model.ParticipationRequest.RequestStatus.CONFIRMED);
         return EventMapper.toFullDto(event, confirmedRequests);
     }
 
@@ -125,6 +131,7 @@ public class EventServiceImpl implements EventService {
         event.setInitiator(initiator);
         event.setCreatedOn(LocalDateTime.now());
         event.setState(EventState.PENDING);
+        event.setViews(0L);
         Event saved = eventRepository.save(event);
         log.info("Event created: id={}, userId={}", saved.getId(), userId);
         return EventMapper.toFullDto(saved, 0L);
