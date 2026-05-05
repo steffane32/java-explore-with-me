@@ -28,6 +28,7 @@
           ],
           "request": {
             "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
             "url": {
               "raw": "http://localhost:8080/events/1/comments",
               "host": ["http://localhost:8080"],
@@ -60,13 +61,15 @@
           ],
           "request": {
             "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
             "url": {
               "raw": "http://localhost:8080/users/1/comments?eventId=1",
               "host": ["http://localhost:8080"],
               "path": ["users", "1", "comments"],
-              "query": [
-                {"key": "eventId", "value": "1"}
-              ]
+              "query": [{"key": "eventId", "value": "1"}]
             },
             "body": {
               "mode": "raw",
@@ -94,6 +97,10 @@
           ],
           "request": {
             "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
             "url": {
               "raw": "http://localhost:8080/users/1/comments/1",
               "host": ["http://localhost:8080"],
@@ -121,6 +128,7 @@
           ],
           "request": {
             "method": "DELETE",
+            "header": [{"key": "Accept", "value": "application/json"}],
             "url": {
               "raw": "http://localhost:8080/users/1/comments/1",
               "host": ["http://localhost:8080"],
@@ -144,6 +152,7 @@
           ],
           "request": {
             "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
             "url": {
               "raw": "http://localhost:8080/users/1/comments",
               "host": ["http://localhost:8080"],
@@ -172,6 +181,7 @@
           ],
           "request": {
             "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
             "url": {
               "raw": "http://localhost:8080/admin/comments",
               "host": ["http://localhost:8080"],
@@ -199,6 +209,10 @@
           ],
           "request": {
             "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
             "url": {
               "raw": "http://localhost:8080/admin/comments/1",
               "host": ["http://localhost:8080"],
@@ -230,6 +244,10 @@
           ],
           "request": {
             "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
             "url": {
               "raw": "http://localhost:8080/admin/comments/1",
               "host": ["http://localhost:8080"],
@@ -257,6 +275,7 @@
           ],
           "request": {
             "method": "DELETE",
+            "header": [{"key": "Accept", "value": "application/json"}],
             "url": {
               "raw": "http://localhost:8080/admin/comments/1",
               "host": ["http://localhost:8080"],
