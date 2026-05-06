@@ -1,0 +1,227 @@
+{
+  "info": {
+    "name": "Explore With Me - Comments Feature",
+    "description": "Тесты с динамическим созданием данных",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080"},
+    {"key": "commentId", "value": ""},
+    {"key": "eventId", "value": ""},
+    {"key": "userId", "value": "1"}
+  ],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Создать пользователя",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('userId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {"raw": "{{baseUrl}}/admin/users", "host": ["{{baseUrl}}"], "path": ["admin", "users"]},
+            "body": {"mode": "raw", "raw": "{\"name\": \"Test User\", \"email\": \"test@test.com\"}"}
+          }
+        },
+        {
+          "name": "Создать категорию",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('categoryId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {"raw": "{{baseUrl}}/admin/categories", "host": ["{{baseUrl}}"], "path": ["admin", "categories"]},
+            "body": {"mode": "raw", "raw": "{\"name\": \"Test Category\"}"}
+          }
+        },
+        {
+          "name": "Создать и опубликовать событие",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('eventId', jsonData.id);",
+                  "pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('baseUrl') + '/admin/events/' + jsonData.id,",
+                  "    method: 'PATCH',",
+                  "    header: {",
+                  "        'Content-Type': 'application/json',",
+                  "        'Accept': 'application/json'",
+                  "    },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({stateAction: 'PUBLISH_EVENT'}) }",
+                  "}, function (err, res) {",
+                  "    if (!err) console.log('Event published');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {"raw": "{{baseUrl}}/users/{{userId}}/events", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}", "events"]},
+            "body": {
+              "mode": "raw",
+              "raw": "{\"annotation\":\"Test annotation for comments\",\"category\":\"{{categoryId}}\",\"description\":\"Test description for comments feature testing\",\"eventDate\":\"2030-12-31 15:10:05\",\"location\":{\"lat\":55.75,\"lon\":37.62},\"title\":\"Test Event for Comments\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tests",
+      "item": [
+        {
+          "name": "Добавить комментарий",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', function() { pm.response.to.have.status(201); });",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('commentId', jsonData.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {"raw": "{{baseUrl}}/users/{{userId}}/comments?eventId={{eventId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}", "comments"], "query": [{"key": "eventId", "value": "{{eventId}}"}]},
+            "body": {"mode": "raw", "raw": "{\"text\": \"Test comment\"}"}
+          }
+        },
+        {
+          "name": "Получить комментарии к событию (публ.)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.test('Array', function() { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/events/{{eventId}}/comments", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}", "comments"]}
+          }
+        },
+        {
+          "name": "Одобрить комментарий (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.test('Status APPROVED', function() { pm.expect(pm.response.json().status).to.eql('APPROVED'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {"raw": "{{baseUrl}}/admin/comments/{{commentId}}", "host": ["{{baseUrl}}"], "path": ["admin", "comments", "{{commentId}}"]},
+            "body": {"mode": "raw", "raw": "{\"status\": \"APPROVED\"}"}
+          }
+        },
+        {
+          "name": "Получить комментарии к событию после одобрения",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.test('Has items', function() { pm.expect(pm.response.json().length).to.be.greaterThan(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/events/{{eventId}}/comments", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}", "comments"]}
+          }
+        },
+        {
+          "name": "Получить комментарии пользователя",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": "pm.test('Status 200', function() { pm.response.to.have.status(200); });"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/users/{{userId}}/comments", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}", "comments"]}
+          }
+        },
+        {
+          "name": "Получить комментарии на модерацию",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": "pm.test('Status 200', function() { pm.response.to.have.status(200); });"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/admin/comments", "host": ["{{baseUrl}}"], "path": ["admin", "comments"]}
+          }
+        }
+      ]
+    }
+  ]
+}
